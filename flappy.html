@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flappy Photo Game - Laptop Edition</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #222;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 10px;
+    }
+    canvas {
+      display: block;
+      margin: 10px auto;
+      background: #87CEEB;
+      border: 3px solid #fff;
+      border-radius: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 8px;
+      background: #ffcc00;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>🐦 Flappy Photo Game - Landscape</h2>
+  <canvas id="gameCanvas" width="1280" height="720"></canvas><br>
+  <button id="startBtn">Start Game</button>
+  <button id="restartBtn" style="display:none;">Restart</button>
+
+  <script>
+  const cvs = document.getElementById("gameCanvas");
+  const ctx = cvs.getContext("2d");
+  const startBtn = document.getElementById("startBtn");
+  const restartBtn = document.getElementById("restartBtn");
+
+  // 🔹 Use your online image links (direct .jpg or .png)
+  const bgImg = new Image(); bgImg.src = "https://i.postimg.cc/MH9wWYPH/amazing-imresizer.jpg";
+  const birdImg = new Image(); birdImg.src = "https://i.postimg.cc/gJ04Cqhb/img20250726-17293971-imresizer.jpg";
+  const pipeImg = new Image(); pipeImg.src = "https://i.postimg.cc/TwyNyJ35/IMG-20250628-112050-imresizer.jpg";
+
+  let bird, gravity, velocity, pipes, score, running;
+
+  function resetGame(){
+    bird = { x: 150, y: cvs.height/2, w: 80, h: 80 };
+    gravity = 0.5;
+    velocity = 0;
+    pipes = [];
+    score = 0;
+    running = true;
+  }
+
+  function drawBird(){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(bird.x + bird.w/2, bird.y + bird.h/2, bird.w/2, 0, Math.PI*2);
+    ctx.clip();
+    ctx.drawImage(birdImg, bird.x, bird.y, bird.w, bird.h);
+    ctx.restore();
+  }
+
+  function spawnPipe(){
+    const gap = 220; // bigger gap for landscape view
+    const topHeight = Math.random() * (cvs.height/2);
+    pipes.push({ x: cvs.width, yTop: topHeight, gap, w: 100 });
+  }
+
+  function update(){
+    if (!running) return;
+
+    velocity += gravity;
+    bird.y += velocity;
+
+    // background
+    ctx.drawImage(bgImg, 0, 0, cvs.width, cvs.height);
+
+    // pipes
+    for (let i = 0; i < pipes.length; i++) {
+      const p = pipes[i];
+      ctx.drawImage(pipeImg, p.x, 0, p.w, p.yTop);
+      ctx.drawImage(pipeImg, p.x, p.yTop + p.gap, p.w, cvs.height - (p.yTop + p.gap));
+      p.x -= 4;
+      // Collision
+      if (
+        bird.x + bird.w > p.x &&
+        bird.x < p.x + p.w &&
+        (bird.y < p.yTop || bird.y + bird.h > p.yTop + p.gap)
+      ) endGame();
+    }
+
+    // remove off-screen pipes
+    if (pipes.length && pipes[0].x + pipes[0].w < 0) pipes.shift();
+
+    // add new pipes
+    if (!pipes.length || pipes[pipes.length - 1].x < cvs.width - 400) spawnPipe();
+
+    // check floor or ceiling hit
+    if (bird.y + bird.h > cvs.height || bird.y < 0) endGame();
+
+    // draw bird
+    drawBird();
+
+    // draw score
+    ctx.fillStyle = "#fff";
+    ctx.font = "28px Arial";
+    ctx.fillText("Score: " + score, 20, 40);
+
+    score++;
+    requestAnimationFrame(update);
+  }
+
+  function jump(){ if (running) velocity = -10; }
+  function startGame(){
+    startBtn.style.display = "none";
+    restartBtn.style.display = "none";
+    resetGame();
+    requestAnimationFrame(update);
+  }
+  function restartGame(){
+    restartBtn.style.display = "none";
+    resetGame();
+    requestAnimationFrame(update);
+  }
+  function endGame(){
+    running = false;
+    restartBtn.style.display = "inline-block";
+    ctx.fillStyle = "red";
+    ctx.font = "48px Arial";
+    ctx.fillText("💀 Game Over 💀", cvs.width/2 - 150, cvs.height/2);
+  }
+
+  cvs.addEventListener("click", jump);
+  startBtn.addEventListener("click", startGame);
+  restartBtn.addEventListener("click", restartGame);
+  </script>
+</body>
+</html>
